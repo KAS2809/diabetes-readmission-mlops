@@ -1,5 +1,5 @@
 import pandas as pd
-
+from sklearn.base import BaseEstimator, TransformerMixin
 
 ADMISSION_MAP = {
     1: "Emergency",
@@ -26,6 +26,30 @@ AGE_MAPPING = {
     "[90-100)": 95,
 }
 
+
+DIABETES_MED_COLS = [
+    "metformin",
+    "repaglinide",
+    "nateglinide",
+    "chlorpropamide",
+    "glimepiride",
+    "acetohexamide",
+    "glipizide",
+    "glyburide",
+    "tolbutamide",
+    "pioglitazone",
+    "rosiglitazone",
+    "acarbose",
+    "miglitol",
+    "troglitazone",
+    "tolazamide",
+    "insulin",
+    "glyburide-metformin",
+    "glipizide-metformin",
+    "glimepiride-pioglitazone",
+    "metformin-rosiglitazone",
+    "metformin-pioglitazone",
+]
 
 def map_discharge(value):
     if value in [1, 6]:
@@ -159,4 +183,81 @@ def engineer_features(df):
         ]
     )
 
+    # Number of active diabetes medications
+    active_med_values = {"Steady", "Up", "Down"}
+
+    df["num_diabetes_meds"] = (
+        df[DIABETES_MED_COLS]
+        .isin(active_med_values)
+        .sum(axis=1)
+    )
+
     return df
+
+class RareCategoryGrouper(BaseEstimator, TransformerMixin):
+    def __init__(self, columns=None, threshold=0.01):
+        self.columns = columns
+        self.threshold = threshold
+
+    def fit(self, X, y=None):
+        self.rare_categories_ = {}
+
+        for column in self.columns:
+            frequencies = X[column].value_counts(
+                normalize=True,
+                dropna=False
+            )
+
+            rare_categories = frequencies[
+                frequencies < self.threshold
+            ].index.tolist()
+
+            self.rare_categories_[column] = rare_categories
+
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+
+        for column in self.columns:
+            rare_categories = self.rare_categories_[column]
+
+            X[column] = X[column].where(
+                ~X[column].isin(rare_categories),
+                "Other"
+            )
+
+        return X
+
+class TopCategoryGrouper(BaseEstimator, TransformerMixin):
+    def __init__(self, column, top_n=10):
+        self.column = column
+        self.top_n = top_n
+
+    def fit(self, X, y=None):
+        self.top_categories_ = (
+            X[self.column]
+            .value_counts()
+            .nlargest(self.top_n)
+            .index
+            .tolist()
+        )
+
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+
+        X[self.column] = X[self.column].where(
+            X[self.column].isin(self.top_categories_),
+            "Other"
+        )
+
+        return X
+
+class FeatureEngineer(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return engineer_features(X)

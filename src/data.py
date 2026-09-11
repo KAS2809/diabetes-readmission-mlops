@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -18,7 +18,7 @@ def load_data():
     """
     df = pd.read_csv(DATA_PATH)
 
-    df = df.replace("?", pd.NA)
+    df = df.replace("?", np.nan)
 
     return df
 
