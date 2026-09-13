@@ -47,16 +47,33 @@ def create_target(df):
     return df
 
 
-def split_data(df):
+def split_data(
+    df,
+    test_size=0.20,
+    validation_size=0.20,
+    random_state=42,
+):
     """
-    Split the dataset into training and testing sets
-    while maintaining the target class distribution.
+    Split the dataset into train, validation, and test sets.
+
+    test_size=0.20 means 20% of the full dataset is held out for testing.
+
+    validation_size=0.20 means 20% of the remaining training data
+    is used for validation.
     """
-    train_df, test_df = train_test_split(
+
+    train_val_df, test_df = train_test_split(
         df,
-        test_size=0.20,
-        random_state=42,
+        test_size=test_size,
+        random_state=random_state,
         stratify=df["readmit_binary"],
     )
 
-    return train_df, test_df
+    train_df, validation_df = train_test_split(
+        train_val_df,
+        test_size=validation_size,
+        random_state=random_state,
+        stratify=train_val_df["readmit_binary"],
+    )
+
+    return train_df, validation_df, test_df

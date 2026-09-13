@@ -64,23 +64,17 @@ def evaluate_model(model_name, pipeline, X_test, y_test):
 
 
 def main():
-    # -------------------------------------------------
     # 1. Load dataset
-    # -------------------------------------------------
     df = load_data()
 
     print("Original dataset shape:")
     print(df.shape)
 
-    # -------------------------------------------------
     # 2. Create target
-    # -------------------------------------------------
     df = create_target(df)
 
-    # -------------------------------------------------
     # 3. Train/test split
-    # -------------------------------------------------
-    train_df, test_df = split_data(df)
+    train_df, validation_df, test_df = split_data(df)
 
     X_train = train_df.drop(columns=["readmit_binary"])
     y_train = train_df["readmit_binary"]
@@ -94,9 +88,7 @@ def main():
     print("\nTest shape:")
     print(X_test.shape)
 
-    # -------------------------------------------------
     # 4. Define models
-    # -------------------------------------------------
     logistic_model = LogisticRegression(
         max_iter=1000,
         class_weight="balanced",
@@ -118,9 +110,7 @@ def main():
         random_state=42,
     )
 
-    # -------------------------------------------------
     # 5. Logistic Regression pipeline
-    # -------------------------------------------------
     logistic_pipeline = Pipeline(
         steps=[
             (
@@ -168,9 +158,7 @@ def main():
         y_test,
     )
 
-    # -------------------------------------------------
     # 6. Random Forest pipeline
-    # -------------------------------------------------
     random_forest_pipeline = Pipeline(
         steps=[
             (
@@ -218,9 +206,7 @@ def main():
         y_test,
     )
 
-    # -------------------------------------------------
     # 7. Gradient Boosting pipeline
-    # -------------------------------------------------
     gradient_boosting_pipeline = Pipeline(
         steps=[
             (
@@ -268,9 +254,7 @@ def main():
         y_test,
     )
 
-    # -------------------------------------------------
     # 8. Gradient Boosting probability analysis
-    # -------------------------------------------------
     gradient_probabilities = (
         gradient_boosting_pipeline
         .predict_proba(X_test)[:, 1]
@@ -305,9 +289,7 @@ def main():
     print("Total test patients:")
     print(len(gradient_probabilities))
 
-    # -------------------------------------------------
     # 9. Gradient Boosting threshold analysis
-    # -------------------------------------------------
     thresholds = [
         0.10,
         0.15,
@@ -363,9 +345,7 @@ def main():
             f"{predicted_positive:<12}"
         )
 
-    # -------------------------------------------------
     # 10. Save current pipeline
-    # -------------------------------------------------
     model_dir = Path("models")
     model_dir.mkdir(exist_ok=True)
 
