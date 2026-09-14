@@ -1,6 +1,9 @@
 import joblib
 from pathlib import Path
 
+import json
+from datetime import datetime
+
 from sklearn.ensemble import (
     RandomForestClassifier,
     GradientBoostingClassifier,
@@ -443,7 +446,8 @@ def main():
     print(f"F1 Score:  {final_results['F1']:.4f}")
     print(f"ROC-AUC:   {final_results['ROC-AUC']:.4f}")
     print(f"PR-AUC:    {final_results['PR-AUC']:.4f}")
-    # 10. Save current pipeline
+
+    # 11. Save champion model and threshold
     model_dir = Path("models")
     model_dir.mkdir(exist_ok=True)
 
@@ -452,15 +456,55 @@ def main():
         / "diabetes_readmission_pipeline.pkl"
     )
 
+    threshold_path = (
+        model_dir
+        / "decision_threshold.pkl"
+    )
+
+    # Save champion Gradient Boosting pipeline
     joblib.dump(
-        logistic_pipeline,
+        gradient_boosting_pipeline,
         model_path,
     )
 
-    print(
-        f"\nSaved trained pipeline to: {model_path}"
+    # Save selected classification threshold
+    joblib.dump(
+        best_threshold,
+        threshold_path,
     )
 
+    print("\nChampion model saved successfully.")
+    print("Model: Gradient Boosting")
+    print(f"Threshold: {best_threshold:.2f}")
+    print(f"Model path: {model_path}")
+    print(f"Threshold path: {threshold_path}")
+
+    metadata = {
+        "model_name": "GradientBoostingClassifier",
+        "decision_threshold": float(best_threshold),
+        "validation_f1": float(best_validation_f1),
+        "test_accuracy": float(final_results["Accuracy"]),
+        "test_precision": float(final_results["Precision"]),
+        "test_recall": float(final_results["Recall"]),
+        "test_f1": float(final_results["F1"]),
+        "test_roc_auc": float(final_results["ROC-AUC"]),
+        "test_pr_auc": float(final_results["PR-AUC"]),
+        "trained_at": datetime.now().isoformat(),
+    }
+
+    metadata_path = (
+        model_dir
+        / "model_metadata.json"
+    )
+
+    with open(metadata_path, "w") as file:
+        json.dump(
+            metadata,
+            file,
+            indent=4,
+        )
+
+    print(f"Metadata path: {metadata_path}")
 
 if __name__ == "__main__":
     main()

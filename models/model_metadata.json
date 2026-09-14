@@ -1,0 +1,12 @@
+{
+    "model_name": "GradientBoostingClassifier",
+    "decision_threshold": 0.15,
+    "validation_f1": 0.2763493621197252,
+    "test_accuracy": 0.7664832465363074,
+    "test_precision": 0.21018215787015412,
+    "test_recall": 0.3963011889035667,
+    "test_f1": 0.27468335113688386,
+    "test_roc_auc": 0.6727405356965837,
+    "test_pr_auc": 0.21673649988936278,
+    "trained_at": "2026-09-14T10:37:42.615695"
+}

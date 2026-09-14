@@ -6,34 +6,63 @@ from src.data import load_data, create_target, split_data
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-MODEL_PATH = PROJECT_ROOT / "models" / "diabetes_readmission_pipeline.pkl"
+
+MODEL_PATH = (
+    PROJECT_ROOT
+    / "models"
+    / "diabetes_readmission_pipeline.pkl"
+)
+
+THRESHOLD_PATH = (
+    PROJECT_ROOT
+    / "models"
+    / "decision_threshold.pkl"
+)
 
 
 def main():
-    # Load saved pipeline
+    # Load champion model
     pipeline = joblib.load(MODEL_PATH)
 
-    print("Saved pipeline loaded successfully.")
+    # Load selected classification threshold
+    threshold = joblib.load(THRESHOLD_PATH)
 
-    # Load data
+    print("Champion pipeline loaded successfully.")
+    print(f"Decision threshold: {threshold:.2f}")
+
+    # Load dataset
     df = load_data()
     df = create_target(df)
 
-    _, test_df = split_data(df)
+    train_df, validation_df, test_df = split_data(df)
 
-    X_test = test_df.drop(columns=["readmit_binary"])
+    X_test = test_df.drop(
+        columns=["readmit_binary"]
+    )
 
-    # Take one raw patient record
+    # Select one raw patient
     sample = X_test.iloc[[0]]
 
-    prediction = pipeline.predict(sample)[0]
-    probability = pipeline.predict_proba(sample)[0, 1]
+    # Get probability from model
+    probability = pipeline.predict_proba(
+        sample
+    )[0, 1]
+
+    # Apply our selected threshold
+    prediction = int(
+        probability >= threshold
+    )
+
+    print("\nReadmission probability:")
+    print(f"{probability:.4f}")
 
     print("\nPrediction:")
     print(prediction)
 
-    print("\nReadmission probability:")
-    print(f"{probability:.4f}")
+    if prediction == 1:
+        print("Risk classification: HIGH RISK")
+    else:
+        print("Risk classification: LOW RISK")
 
 
 if __name__ == "__main__":
