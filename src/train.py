@@ -62,6 +62,43 @@ def evaluate_model(model_name, pipeline, X_test, y_test):
 
     return results
 
+def find_best_threshold(y_true, y_prob):
+    """
+    Find the classification threshold that maximizes
+    F1 score on the validation set.
+    """
+
+    thresholds = [
+        0.10,
+        0.15,
+        0.20,
+        0.25,
+        0.30,
+        0.35,
+        0.40,
+        0.45,
+        0.50,
+    ]
+
+    best_threshold = None
+    best_f1 = -1
+
+    for threshold in thresholds:
+        predictions = (
+            y_prob >= threshold
+        ).astype(int)
+
+        current_f1 = f1_score(
+            y_true,
+            predictions,
+        )
+
+        if current_f1 > best_f1:
+            best_f1 = current_f1
+            best_threshold = threshold
+
+    return best_threshold, best_f1
+
 
 def main():
     # 1. Load dataset
@@ -79,15 +116,20 @@ def main():
     X_train = train_df.drop(columns=["readmit_binary"])
     y_train = train_df["readmit_binary"]
 
+    X_validation = validation_df.drop(columns=["readmit_binary"])
+    y_validation = validation_df["readmit_binary"]
+
     X_test = test_df.drop(columns=["readmit_binary"])
     y_test = test_df["readmit_binary"]
 
     print("\nTraining shape:")
     print(X_train.shape)
 
+    print("\nValidation shape:")
+    print(X_validation.shape)
+
     print("\nTest shape:")
     print(X_test.shape)
-
     # 4. Define models
     logistic_model = LogisticRegression(
         max_iter=1000,
@@ -154,8 +196,8 @@ def main():
     logistic_results = evaluate_model(
         "Logistic Regression",
         logistic_pipeline,
-        X_test,
-        y_test,
+        X_validation,
+        y_validation,
     )
 
     # 6. Random Forest pipeline
@@ -202,8 +244,8 @@ def main():
     random_forest_results = evaluate_model(
         "Random Forest",
         random_forest_pipeline,
-        X_test,
-        y_test,
+        X_validation,
+        y_validation,
     )
 
     # 7. Gradient Boosting pipeline
@@ -250,14 +292,14 @@ def main():
     gradient_boosting_results = evaluate_model(
         "Gradient Boosting",
         gradient_boosting_pipeline,
-        X_test,
-        y_test,
+        X_validation,
+        y_validation,
     )
 
     # 8. Gradient Boosting probability analysis
     gradient_probabilities = (
         gradient_boosting_pipeline
-        .predict_proba(X_test)[:, 1]
+        .predict_proba(X_validation)[:, 1]
     )
 
     print("\nGradient Boosting probability distribution:")
@@ -286,7 +328,7 @@ def main():
         (gradient_probabilities >= 0.50).sum()
     )
 
-    print("Total test patients:")
+    print("Total validation patients:")
     print(len(gradient_probabilities))
 
     # 9. Gradient Boosting threshold analysis
@@ -318,18 +360,18 @@ def main():
         ).astype(int)
 
         precision = precision_score(
-            y_test,
+            y_validation,
             threshold_predictions,
             zero_division=0,
         )
 
         recall = recall_score(
-            y_test,
+            y_validation,
             threshold_predictions,
         )
 
         f1 = f1_score(
-            y_test,
+            y_validation,
             threshold_predictions,
         )
 
@@ -345,6 +387,62 @@ def main():
             f"{predicted_positive:<12}"
         )
 
+    best_threshold, best_validation_f1 = find_best_threshold(
+        y_validation,
+        gradient_probabilities,
+    )
+
+    print("\nBest Gradient Boosting threshold:")
+    print(f"Threshold: {best_threshold:.2f}")
+    print(f"Validation F1: {best_validation_f1:.4f}")
+
+
+    # 10. Final evaluation on untouched test set
+    test_probabilities = (
+        gradient_boosting_pipeline
+        .predict_proba(X_test)[:, 1]
+    )
+
+    test_predictions = (
+        test_probabilities >= best_threshold
+    ).astype(int)
+
+    final_results = {
+        "Accuracy": accuracy_score(
+            y_test,
+            test_predictions,
+        ),
+        "Precision": precision_score(
+            y_test,
+            test_predictions,
+            zero_division=0,
+        ),
+        "Recall": recall_score(
+            y_test,
+            test_predictions,
+        ),
+        "F1": f1_score(
+            y_test,
+            test_predictions,
+        ),
+        "ROC-AUC": roc_auc_score(
+            y_test,
+            test_probabilities,
+        ),
+        "PR-AUC": average_precision_score(
+            y_test,
+            test_probabilities,
+        ),
+    }
+
+    print("\nFINAL TEST RESULTS")
+    print(f"Threshold: {best_threshold:.2f}")
+    print(f"Accuracy:  {final_results['Accuracy']:.4f}")
+    print(f"Precision: {final_results['Precision']:.4f}")
+    print(f"Recall:    {final_results['Recall']:.4f}")
+    print(f"F1 Score:  {final_results['F1']:.4f}")
+    print(f"ROC-AUC:   {final_results['ROC-AUC']:.4f}")
+    print(f"PR-AUC:    {final_results['PR-AUC']:.4f}")
     # 10. Save current pipeline
     model_dir = Path("models")
     model_dir.mkdir(exist_ok=True)
