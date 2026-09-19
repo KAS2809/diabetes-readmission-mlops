@@ -1,8 +1,11 @@
 import joblib
 from pathlib import Path
 
+import mlflow
+import mlflow.sklearn
 import json
 from datetime import datetime
+import numpy as np
 
 from sklearn.ensemble import (
     RandomForestClassifier,
@@ -102,7 +105,9 @@ def find_best_threshold(y_true, y_prob):
 
     return best_threshold, best_f1
 
-
+mlflow.set_experiment(
+    "diabetes-readmission-model-comparison"
+)
 def main():
     # 1. Load dataset
     df = load_data()
@@ -187,21 +192,79 @@ def main():
         ]
     )
 
-    print("\nTraining Logistic Regression...")
+    with mlflow.start_run(
+        run_name="Logistic Regression"
+    ):
 
-    logistic_pipeline.fit(
-        X_train,
-        y_train,
-    )
+        print("\nTraining Logistic Regression...")
 
-    print("Logistic Regression trained successfully.")
+        logistic_pipeline.fit(
+            X_train,
+            y_train,
+        )
 
-    logistic_results = evaluate_model(
-        "Logistic Regression",
-        logistic_pipeline,
-        X_validation,
-        y_validation,
-    )
+        print(
+            "Logistic Regression trained successfully."
+        )
+
+        logistic_results = evaluate_model(
+            "Logistic Regression",
+            logistic_pipeline,
+            X_validation,
+            y_validation,
+        )
+
+        # Log model parameters
+        mlflow.log_param(
+            "model_type",
+            "LogisticRegression",
+        )
+
+        mlflow.log_param(
+            "max_iter",
+            1000,
+        )
+
+        mlflow.log_param(
+            "class_weight",
+            "balanced",
+        )
+
+        mlflow.log_param(
+            "random_state",
+            42,
+        )
+
+        # Log validation metrics
+        mlflow.log_metric(
+            "validation_accuracy",
+            logistic_results["Accuracy"],
+        )
+
+        mlflow.log_metric(
+            "validation_precision",
+            logistic_results["Precision"],
+        )
+
+        mlflow.log_metric(
+            "validation_recall",
+            logistic_results["Recall"],
+        )
+
+        mlflow.log_metric(
+            "validation_f1",
+            logistic_results["F1"],
+        )
+
+        mlflow.log_metric(
+            "validation_roc_auc",
+            logistic_results["ROC-AUC"],
+        )
+
+        mlflow.log_metric(
+            "validation_pr_auc",
+            logistic_results["PR-AUC"],
+        )
 
     # 6. Random Forest pipeline
     random_forest_pipeline = Pipeline(
@@ -235,21 +298,89 @@ def main():
         ]
     )
 
-    print("\nTraining Random Forest...")
+    with mlflow.start_run(
+        run_name="Random Forest"
+    ):
 
-    random_forest_pipeline.fit(
-        X_train,
-        y_train,
-    )
+        print("\nTraining Random Forest...")
 
-    print("Random Forest trained successfully.")
+        random_forest_pipeline.fit(
+            X_train,
+            y_train,
+        )
 
-    random_forest_results = evaluate_model(
-        "Random Forest",
-        random_forest_pipeline,
-        X_validation,
-        y_validation,
-    )
+        print(
+            "Random Forest trained successfully."
+        )
+
+        random_forest_results = evaluate_model(
+            "Random Forest",
+            random_forest_pipeline,
+            X_validation,
+            y_validation,
+        )
+
+        # Log model parameters
+        mlflow.log_param(
+            "model_type",
+            "RandomForestClassifier",
+        )
+
+        mlflow.log_param(
+            "n_estimators",
+            300,
+        )
+
+        mlflow.log_param(
+            "max_depth",
+            "None",
+        )
+
+        mlflow.log_param(
+            "class_weight",
+            "balanced",
+        )
+
+        mlflow.log_param(
+            "random_state",
+            42,
+        )
+
+        mlflow.log_param(
+            "n_jobs",
+            -1,
+        )
+
+        # Log validation metrics
+        mlflow.log_metric(
+            "validation_accuracy",
+            random_forest_results["Accuracy"],
+        )
+
+        mlflow.log_metric(
+            "validation_precision",
+            random_forest_results["Precision"],
+        )
+
+        mlflow.log_metric(
+            "validation_recall",
+            random_forest_results["Recall"],
+        )
+
+        mlflow.log_metric(
+            "validation_f1",
+            random_forest_results["F1"],
+        )
+
+        mlflow.log_metric(
+            "validation_roc_auc",
+            random_forest_results["ROC-AUC"],
+        )
+
+        mlflow.log_metric(
+            "validation_pr_auc",
+            random_forest_results["PR-AUC"],
+        )
 
     # 7. Gradient Boosting pipeline
     gradient_boosting_pipeline = Pipeline(
@@ -283,21 +414,84 @@ def main():
         ]
     )
 
-    print("\nTraining Gradient Boosting...")
+    with mlflow.start_run(
+        run_name="Gradient Boosting"
+    ):
 
-    gradient_boosting_pipeline.fit(
-        X_train,
-        y_train,
-    )
+        print("\nTraining Gradient Boosting...")
 
-    print("Gradient Boosting trained successfully.")
+        gradient_boosting_pipeline.fit(
+            X_train,
+            y_train,
+        )
 
-    gradient_boosting_results = evaluate_model(
-        "Gradient Boosting",
-        gradient_boosting_pipeline,
-        X_validation,
-        y_validation,
-    )
+        print(
+            "Gradient Boosting trained successfully."
+        )
+
+        gradient_boosting_results = evaluate_model(
+            "Gradient Boosting",
+            gradient_boosting_pipeline,
+            X_validation,
+            y_validation,
+        )
+
+        # Log model parameters
+        mlflow.log_param(
+            "model_type",
+            "GradientBoostingClassifier",
+        )
+
+        mlflow.log_param(
+            "n_estimators",
+            100,
+        )
+
+        mlflow.log_param(
+            "learning_rate",
+            0.1,
+        )
+
+        mlflow.log_param(
+            "max_depth",
+            3,
+        )
+
+        mlflow.log_param(
+            "random_state",
+            42,
+        )
+
+        # Log validation metrics
+        mlflow.log_metric(
+            "validation_accuracy",
+            gradient_boosting_results["Accuracy"],
+        )
+
+        mlflow.log_metric(
+            "validation_precision",
+            gradient_boosting_results["Precision"],
+        )
+
+        mlflow.log_metric(
+            "validation_recall",
+            gradient_boosting_results["Recall"],
+        )
+
+        mlflow.log_metric(
+            "validation_f1_default_threshold",
+            gradient_boosting_results["F1"],
+        )
+
+        mlflow.log_metric(
+            "validation_roc_auc",
+            gradient_boosting_results["ROC-AUC"],
+        )
+
+        mlflow.log_metric(
+            "validation_pr_auc",
+            gradient_boosting_results["PR-AUC"],
+        )
 
     # 8. Gradient Boosting probability analysis
     gradient_probabilities = (
@@ -318,8 +512,6 @@ def main():
         f"Mean:    "
         f"{gradient_probabilities.mean():.4f}"
     )
-
-    import numpy as np
 
     print(
         f"Median:  "
@@ -398,6 +590,24 @@ def main():
     print("\nBest Gradient Boosting threshold:")
     print(f"Threshold: {best_threshold:.2f}")
     print(f"Validation F1: {best_validation_f1:.4f}")
+    with mlflow.start_run(
+        run_name="Gradient Boosting Threshold Selection"
+    ):
+
+        mlflow.log_param(
+            "model_type",
+            "GradientBoostingClassifier",
+        )
+
+        mlflow.log_param(
+            "selected_threshold",
+            float(best_threshold),
+        )
+
+        mlflow.log_metric(
+            "validation_f1_selected_threshold",
+            float(best_validation_f1),
+        )
 
 
     # 10. Final evaluation on untouched test set
