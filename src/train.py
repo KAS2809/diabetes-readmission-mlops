@@ -414,6 +414,8 @@ def main():
         ]
     )
 
+
+    # Gradient Boosting MLflow experiment
     with mlflow.start_run(
         run_name="Gradient Boosting"
     ):
@@ -462,7 +464,8 @@ def main():
             42,
         )
 
-        # Log validation metrics
+        # Log default validation metrics
+
         mlflow.log_metric(
             "validation_accuracy",
             gradient_boosting_results["Accuracy"],
@@ -493,21 +496,59 @@ def main():
             gradient_boosting_results["PR-AUC"],
         )
 
+        # Generate validation probabilities
+
+        gradient_probabilities = (
+            gradient_boosting_pipeline
+            .predict_proba(X_validation)[:, 1]
+        )
+
+        # Find best validation threshold
+        best_threshold, best_validation_f1 = (
+            find_best_threshold(
+                y_validation,
+                gradient_probabilities,
+            )
+        )
+
+        # Log selected threshold
+        mlflow.log_param(
+            "selected_threshold",
+            float(best_threshold),
+        )
+
+        mlflow.log_metric(
+            "validation_f1_selected_threshold",
+            float(best_validation_f1),
+        )
+        mlflow.sklearn.log_model(
+            sk_model=gradient_boosting_pipeline,
+            name="model",
+            serialization_format="skops",
+            skops_trusted_types=[
+                "numpy.dtype",
+                "sklearn.compose._column_transformer.make_column_selector",
+                "src.features.FeatureEngineer",
+                "src.features.RareCategoryGrouper",
+                "src.features.TopCategoryGrouper",
+            ],
+        )
+
+
     # 8. Gradient Boosting probability analysis
-    gradient_probabilities = (
-        gradient_boosting_pipeline
-        .predict_proba(X_validation)[:, 1]
-    )
 
     print("\nGradient Boosting probability distribution:")
+
     print(
         f"Minimum: "
         f"{gradient_probabilities.min():.4f}"
     )
+
     print(
         f"Maximum: "
         f"{gradient_probabilities.max():.4f}"
     )
+
     print(
         f"Mean:    "
         f"{gradient_probabilities.mean():.4f}"
@@ -519,14 +560,20 @@ def main():
     )
 
     print("\nPatients with probability >= 0.50:")
+
     print(
         (gradient_probabilities >= 0.50).sum()
     )
 
     print("Total validation patients:")
-    print(len(gradient_probabilities))
+
+    print(
+        len(gradient_probabilities)
+    )
+
 
     # 9. Gradient Boosting threshold analysis
+
     thresholds = [
         0.10,
         0.15,
@@ -550,6 +597,7 @@ def main():
     )
 
     for threshold in thresholds:
+
         threshold_predictions = (
             gradient_probabilities >= threshold
         ).astype(int)
@@ -582,14 +630,19 @@ def main():
             f"{predicted_positive:<12}"
         )
 
-    best_threshold, best_validation_f1 = find_best_threshold(
-        y_validation,
-        gradient_probabilities,
-    )
+
+    # Display selected threshold
 
     print("\nBest Gradient Boosting threshold:")
-    print(f"Threshold: {best_threshold:.2f}")
-    print(f"Validation F1: {best_validation_f1:.4f}")
+
+    print(
+        f"Threshold: {best_threshold:.2f}"
+    )
+
+    print(
+        f"Validation F1: "
+        f"{best_validation_f1:.4f}"
+    )
     with mlflow.start_run(
         run_name="Gradient Boosting Threshold Selection"
     ):
