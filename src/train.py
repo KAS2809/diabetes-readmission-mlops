@@ -418,7 +418,7 @@ def main():
     # Gradient Boosting MLflow experiment
     with mlflow.start_run(
         run_name="Gradient Boosting"
-    ):
+    ) as gradient_run:
 
         print("\nTraining Gradient Boosting...")
 
@@ -524,6 +524,9 @@ def main():
         mlflow.sklearn.log_model(
             sk_model=gradient_boosting_pipeline,
             name="model",
+            registered_model_name=(
+                "DiabetesReadmissionModel"
+            ),
             serialization_format="skops",
             skops_trusted_types=[
                 "numpy.dtype",
@@ -533,7 +536,7 @@ def main():
                 "src.features.TopCategoryGrouper",
             ],
         )
-
+    gradient_run_id = gradient_run.info.run_id
 
     # 8. Gradient Boosting probability analysis
 
@@ -700,6 +703,40 @@ def main():
             test_probabilities,
         ),
     }
+
+    with mlflow.start_run(
+        run_id=gradient_run_id
+    ):
+
+        mlflow.log_metric(
+            "test_accuracy",
+            final_results["Accuracy"],
+        )
+
+        mlflow.log_metric(
+            "test_precision",
+            final_results["Precision"],
+        )
+
+        mlflow.log_metric(
+            "test_recall",
+            final_results["Recall"],
+        )
+
+        mlflow.log_metric(
+            "test_f1",
+            final_results["F1"],
+        )
+
+        mlflow.log_metric(
+            "test_roc_auc",
+            final_results["ROC-AUC"],
+        )
+
+        mlflow.log_metric(
+            "test_pr_auc",
+            final_results["PR-AUC"],
+        )
 
     print("\nFINAL TEST RESULTS")
     print(f"Threshold: {best_threshold:.2f}")

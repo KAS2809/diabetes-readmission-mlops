@@ -1,0 +1,28 @@
+artifact_path: file:///C:/Users/lavan/OneDrive/Desktop/NewMLProject/diabetes-readmission-mlops/mlruns/1/models/m-b69a41b21b5d4e6ea03dfe138d440663/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.12.4
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types:
+    - numpy.dtype
+    - sklearn.compose._column_transformer.make_column_selector
+    - src.features.FeatureEngineer
+    - src.features.RareCategoryGrouper
+    - src.features.TopCategoryGrouper
+mlflow_version: 3.16.0
+model_id: m-b69a41b21b5d4e6ea03dfe138d440663
+model_size_bytes: 3792917
+model_uuid: m-b69a41b21b5d4e6ea03dfe138d440663
+prompts: null
+run_id: 53b258c4b99d4c61a33e1e2ba0e202df
+utc_time_created: '2026-09-19 19:56:43.785076'
