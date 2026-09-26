@@ -15,7 +15,7 @@ def test_saved_pipeline_prediction():
     df = load_data()
     df = create_target(df)
 
-    _, test_df = split_data(df)
+    _, _, test_df = split_data(df)
 
     X_test = test_df.drop(columns=["readmit_binary"])
 
