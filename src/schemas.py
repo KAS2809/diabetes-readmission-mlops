@@ -57,3 +57,8 @@ class PatientData(BaseModel):
     diag_1: Optional[str] = None
     diag_2: Optional[str] = None
     diag_3: Optional[str] = None
+    payer_code: Optional[str] = None
+    weight: Optional[str] = None
+
+    examide: Optional[str] = "No"
+    citoglipton: Optional[str] = "No"
